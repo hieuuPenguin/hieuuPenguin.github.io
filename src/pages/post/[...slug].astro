@@ -53,8 +53,6 @@ function formatDate(d: Date) {
       <time datetime={formatDate(post.data.date)}>
         {formatDate(post.data.date)}
       </time>
-      <span>{wordCount} words</span>
-      <span>{readingTime} min read</span>
     </div>
     {post.data.tags && post.data.tags.length > 0 && (
       <div class="flex flex-wrap gap-2 mt-4">
