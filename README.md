@@ -1,107 +1,67 @@
-# hieuuPenguin Blog
+# 🍥 hieuuPenguin Blog
 
-A static Astro blog for publishing CVE notes and CTF writeups.
+![Node.js >= 20](https://img.shields.io/badge/node.js-%3E%3D20-brightgreen)
+![npm >= 9](https://img.shields.io/badge/npm-%3E%3D9-blue)
+![Astro 6](https://img.shields.io/badge/Astro-6.x-BC52EE?logo=astro)
+![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss)
 
-![Astro](https://img.shields.io/badge/Astro-6.x-BC52EE?logo=astro)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss)
-![GitHub Pages](https://img.shields.io/badge/deploy-GitHub_Pages-181717?logo=github)
+A static CVE and CTF writeup blog built with [Astro](https://astro.build), based on [santisify/astro-theme-sify](https://github.com/santisify/astro-theme-sify).
 
-## Features
+[**🖥️ Original Theme Demo**](https://astro-theme-sify-demo.vercel.app/)
+/
+[**📦 Source Theme**](https://github.com/santisify/astro-theme-sify)
 
-- **Markdown and MDX posts** for technical writeups.
-- **CTF/CVE categories and tags** for browsing by event, topic, or vulnerability type.
-- **Search index** generated at build time.
-- **Syntax highlighting** with Shiki.
-- **Math rendering** with KaTeX.
-- **Responsive layout** for desktop and mobile readers.
-- **GitHub Pages deployment** through GitHub Actions.
+## ✨ Features
 
-## Tech Stack
+- [x] Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com)
+- [x] Markdown and MDX writeups
+- [x] CVE and CTF category pages
+- [x] Tag pages for filtering writeups
+- [x] Full-site search index
+- [x] Code highlighting with [Shiki](https://shiki.style)
+- [x] Math rendering with [KaTeX](https://katex.org)
+- [x] Light / dark mode
+- [x] Responsive layout
+- [x] GitHub Pages deployment workflow
 
-| Tool | Purpose |
-| --- | --- |
-| [Astro 6](https://astro.build) | Static site generation |
-| [Tailwind CSS v4](https://tailwindcss.com) | Styling |
-| [MDX](https://mdxjs.com) | Markdown with components |
-| [Shiki](https://shiki.style) | Code highlighting |
-| [KaTeX](https://katex.org) | Math rendering |
-| [GitHub Actions](https://github.com/features/actions) | GitHub Pages deployment |
+## 🚀 Getting Started
 
-## Getting Started
+1. Clone this repository:
 
-### Requirements
+   ```sh
+   git clone <your-repo-url>
+   cd <your-repo-name>
+   ```
 
-- Node.js 20 or newer
-- npm
+2. Install dependencies:
 
-### Install Dependencies
+   ```sh
+   npm install
+   ```
 
-```bash
-npm install
-```
+3. Edit the site configuration:
 
-### Run Locally
+   - `src/consts.ts` for title, description, author, avatar, navigation, and social links.
+   - `astro.config.ts` for the final public `site` URL before deployment.
 
-```bash
-npm run dev
-```
+4. Create or edit posts in `src/content/blog/`.
 
-Open <http://localhost:4321> in your browser.
+5. Run the site locally:
 
-### Build
+   ```sh
+   npm run dev
+   ```
 
-```bash
-npm run build
-```
+6. Deploy to GitHub Pages by pushing to the `main` branch. The workflow in `.github/workflows/deploy.yml` will build and deploy the site.
 
-The production output is generated in `dist/`.
-
-### Preview the Production Build
-
-```bash
-npm run preview
-```
-
-## Project Configuration
-
-Main site settings live in `src/consts.ts`:
-
-```ts
-export const SITE_TITLE = 'hieuuPenguin Blog';
-export const SITE_DESCRIPTION = 'CVE & CTF writeups by hieuuPenguin';
-export const SITE_AUTHOR = 'hieuuPenguin';
-export const SITE_URL = 'https://example.github.io';
-```
-
-Astro build settings live in `astro.config.ts`. Before deploying to GitHub Pages, set the `site` value to the final public URL, for example:
-
-```ts
-export default defineConfig({
-  site: 'https://your-username.github.io',
-});
-```
-
-## Writing Posts
-
-Published posts are stored under `src/content/blog/`.
-
-The recommended structure is one folder per post:
-
-```text
-src/content/blog/
-`-- tjctf-2026-paper-trail/
-    |-- index.md
-    |-- cover.png
-    `-- image.png
-```
-
-Example frontmatter:
+## 📝 Frontmatter of Posts
 
 ```yaml
 ---
 title: "TJCTF2026-web/paper-trail"
 description: "CTF writeup - web/paper-trail (TJCTF 2026)"
 date: 2026-05-17
+updated: 2026-05-18
 tags: [CTF, Web, TJCTF]
 category: "TJCTF 2026"
 cover: ./cover.png
@@ -110,82 +70,118 @@ draft: false
 ---
 ```
 
-Supported frontmatter fields:
+Supported fields:
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `title` | string | Required post title |
-| `description` | string | Optional summary |
-| `date` | date | Publish date |
-| `updated` | date | Optional update date |
-| `tags` | string array | Used by tag pages |
-| `category` | string | Used by category pages |
-| `cover` | string | Local relative image path or remote URL |
-| `pinned` | boolean | Pins a post when supported by the layout |
-| `draft` | boolean | Draft posts are excluded from normal publishing |
+| Field | Type | Required | Description |
+|:------|:-----|:---------|:------------|
+| `title` | `string` | Yes | Post title |
+| `description` | `string` | No | Short summary shown in post lists |
+| `date` | `date` | No | Publish date |
+| `updated` | `date` | No | Last update date |
+| `tags` | `string[]` | No | Tags used by tag pages |
+| `category` | `string` | No | Category used by category pages |
+| `cover` | `string` | No | Local relative image path or remote URL |
+| `pinned` | `boolean` | No | Marks a post as pinned |
+| `draft` | `boolean` | No | Excludes a draft post from normal publishing |
+
+Recommended post structure:
+
+```text
+src/content/blog/
+`-- tjctf-2026-paper-trail/
+    |-- index.md
+    |-- cover.png
+    |-- image.png
+    `-- image-1.png
+```
 
 Images can be referenced from the same post folder:
 
 ```md
-![Request flow](./image.png)
+![Challenge screenshot](./image.png)
 ```
 
-## GitHub Pages Deployment
+## 🧩 Markdown Features
 
-This repository includes a GitHub Actions workflow at `.github/workflows/deploy.yml`.
+In addition to Astro's default Markdown support, this blog includes:
 
-Deployment flow:
+- Markdown and MDX posts
+- Local images next to each post
+- Syntax-highlighted code blocks
+- Inline and block math through KaTeX
+- Generated table of contents in post pages
 
-1. Push changes to the `main` branch.
-2. GitHub Actions runs `astro build`.
-3. The generated `dist/` output is deployed to GitHub Pages.
+Example math syntax:
 
-In the GitHub repository settings, configure Pages to use **GitHub Actions** as the build and deployment source.
+```md
+Inline math: $E = mc^2$
 
-If this is a user site, the repository name should normally be:
+Block math:
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+```
+
+## ⚡ Commands
+
+All commands are run from the root of the project:
+
+| Command | Action |
+|:--------|:-------|
+| `npm install` | Install dependencies |
+| `npm run dev` | Start the local dev server at `localhost:4321` |
+| `npm run build` | Build the production site to `./dist/` |
+| `npm run preview` | Preview the production build locally |
+
+## 🌐 Deployment
+
+This repository is ready for GitHub Pages deployment.
+
+1. Make sure `astro.config.ts` uses the correct public URL:
+
+   ```ts
+   export default defineConfig({
+     site: 'https://your-username.github.io',
+   });
+   ```
+
+2. Push the repository to GitHub.
+
+3. In **Settings → Pages**, set the build and deployment source to **GitHub Actions**.
+
+4. Push to `main` and wait for the deploy workflow to finish.
+
+For a personal GitHub Pages site, the repository name should normally be:
 
 ```text
 your-username.github.io
 ```
 
-## Useful Commands
-
-```bash
-npm install
-npm run dev
-npm run build
-npm run preview
-```
-
-## Directory Structure
+## 📁 Project Structure
 
 ```text
 .
-|-- .github/workflows/      # GitHub Pages deployment workflow
+|-- .github/workflows/      # GitHub Pages workflow
 |-- public/                 # Static assets
-|   |-- avt.jpg
-|   |-- ctf/
-|   `-- favicon.svg
 |-- src/
-|   |-- components/         # Astro UI components
-|   |-- content/blog/       # Published writeups
+|   |-- components/         # Astro components
+|   |-- content/blog/       # Published posts
 |   |-- layouts/            # Page layouts
 |   |-- pages/              # Routes
 |   |-- styles/             # Global styles
-|   `-- utils/              # Utility functions
+|   `-- utils/              # Utilities
 |-- upctf/                  # Source CTF notes and assets
 |-- upcve/                  # Source CVE notes and assets
-|-- astro.config.ts
-|-- package.json
-`-- src/consts.ts
+|-- astro.config.ts         # Astro configuration
+|-- package.json            # Project scripts and dependencies
+`-- src/consts.ts           # Site metadata and navigation
 ```
 
-## Notes
+## ✏️ Credits
 
-- Do not commit `node_modules/`, `dist/`, or `.astro/`; they are ignored by `.gitignore`.
-- Keep final published posts in `src/content/blog/`.
-- Use `upctf/` and `upcve/` as working/source folders when preparing writeups.
+This blog is customized from [santisify/astro-theme-sify](https://github.com/santisify/astro-theme-sify).
 
-## License
+## 📄 License
 
-ISC
+This project follows the license declared in `package.json`.

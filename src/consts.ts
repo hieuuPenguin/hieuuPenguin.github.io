@@ -13,7 +13,7 @@ export const NAV_ITEMS = [
 ];
 
 export const SOCIAL_LINKS = [
-  { name: 'GitHub', href: 'https://github.com/H1euPengu1n07', icon: 'github' },
+  { name: 'GitHub', href: 'https://github.com/hieuuPenguin', icon: 'github' },
   { name: 'Facebook', href: 'https://www.facebook.com/hieuuPenguin', icon: 'facebook' },
 ];
 
