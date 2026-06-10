@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE_AUTHOR } from '../consts';
+---
+
+<BaseLayout title="About">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
+    <article class="prose max-w-none">
+      <h1>About</h1>
+      <p>
+        Hi, I am {SITE_AUTHOR}. I publish CVE analyses and CTF writeups here.
+      </p>
+      <p>
+        I'm a cybersecurity student at Posts and Telecommunications Institute of Technology (PTIT),
+        focusing mainly on Web Exploitation and real-world web security research.
+      </p>
+      <p>
+        Most posts are security research notes — vulnerability breakdowns and challenge writeups. I hope you find something useful.
+      </p>
+      <h2>About This Site</h2>
+      <ul>
+        <li>Framework: <a href="https://astro.build">Astro</a></li>
+        <li>Styling: <a href="https://tailwindcss.com/">Tailwind CSS</a></li>
+        <li>Deployment: Static site</li>
+      </ul>
+      <h2>Contact</h2>
+      <p>For questions or suggestions, you can reach me here:</p>
+      <ul>
+        <li><a href="https://github.com/H1euPengu1n07">GitHub</a></li>
+        <li><a href="https://www.facebook.com/hieuuPenguin">Facebook</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>

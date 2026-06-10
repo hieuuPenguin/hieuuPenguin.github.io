@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content';
+import BlogLayout from '../layouts/BlogLayout.astro';
+import Hero from '../components/Hero.astro';
+import PostList from '../components/PostList.astro';
+import CTFList from '../components/CTFList.astro';
+import { resolveCover } from './_imageStore';
+
+const allPosts = await getCollection('blog');
+const cvePosts = allPosts
+  .filter((p) => p.data.category === 'CVE')
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .map((p) => ({
+    ...p,
+    slug: p.id,
+    data: {
+      ...p.data,
+      cover: resolveCover('blog', p.id, p.data.cover),
+    },
+  }));
+---
+
+<BlogLayout>
+  <Hero />
+  <PostList posts={cvePosts} heading="CVE" />
+  <CTFList />
+</BlogLayout>
