@@ -11,66 +11,66 @@ draft: false
 
 ### Overview
 
-Đề bài cho một website ngân hàng. Mục tiêu là khai thác lỗ hổng của hệ thống để truy cập trái phép vào khu vực quản trị và lấy flag.
+The challenge gives a banking website. The goal is to exploit a vulnerability in the system to gain unauthorized access to the admin area and get the flag.
 
 ### Dirsearch
 
-Bước đầu tiên là enumerate path của web.
+The first step is to enumerate the web paths.
 
 ```bash
 dirsearch -u http://challenge.utctf.live:5926/
 ```
 
-Kết quả đáng chú ý nhất là thấy được path:
+The most notable result is seeing the path:
 
 ```text
 /resources
 ```
 
-Sau khi thấy `/resources`, truy cập trực tiếp trên browser:
+After seeing `/resources`, access it directly in the browser:
 
-Trang này trả về directory listing, hiển thị các file bên trong thư mục:
+This page returns a directory listing, showing the files inside the directory:
 
 - `memo.txt`
 - `key.pem`
 - `FNSB_InternetBanking_Guide.pdf`
 
-### Mở PDF để lấy credential test
+### Opening the PDF to get test credentials
 
-Từ file:
+From the file:
 
 ```text
 /resources/FNSB_InternetBanking_Guide.pdf
 ```
 
-có thể đọc được demo login credentials:
+we can read the demo login credentials:
 
 - Username: `testuser`
 - Password: `testpass123`
 
-Đây là bước giúp có được một phiên đăng nhập hợp lệ trên hệ thống.
+This step helps obtain a valid login session on the system.
 
-Sau khi đăng nhập, server cấp cho người dùng một cookie tên là:
+After logging in, the server gives the user a cookie named:
 
 ```text
 fnsb_token
 ```
 
-### Phân tích `fnsb_token`
+### Analyzing `fnsb_token`
 
-Khi giải mã token này từ base64, nhận thấy nó không phải JWT ký số thông thường, mà là một JWE (JSON Web Encryption).
+When decoding this token from base64, we notice it is not a normal signed JWT, but a JWE (JSON Web Encryption).
 
-Header của token có dạng:
+The token header looks like:
 
 ```json
 {"cty":"JWT","enc":"A256GCM","alg":"RSA-OAEP-256"}
 ```
 
-### File `key.pem`
+### The `key.pem` file
 
-Quay lại `/resources/` và mở file `key.pem`
+Go back to `/resources/` and open the file `key.pem`
 
-Nội dung đầu file cho thấy đây là:
+The start of the file shows this is:
 
 ```pem
 -----BEGIN PUBLIC KEY-----
@@ -84,7 +84,7 @@ OQIDAQAB
 -----END PUBLIC KEY-----
 ```
 
-### Script để forge token admin
+### Script to forge the admin token
 
 ```python
 from jwcrypto import jwk, jwe
@@ -110,11 +110,11 @@ token.add_recipient(key)
 print(token.serialize(compact=True))
 ```
 
-Chạy script sẽ in ra forged token.
+Running the script prints the forged token.
 
-### Vào admin và lấy flag
+### Accessing admin and getting the flag
 
-Thay token mới vừa forged được, sau khi token được server chấp nhận, trang admin hiện ra.
+Replace the cookie with the newly forged token; after the server accepts the token, the admin page appears.
 
 ![](./image.png)
 

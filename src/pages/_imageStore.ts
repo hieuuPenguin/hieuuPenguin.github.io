@@ -26,7 +26,7 @@ export function resolveCover(collection: string, entryId: string, cover?: string
   if (!cover.startsWith('./') && !cover.startsWith('../')) return cover;
 
   // Entry ids from the glob loader can be either the directory (for
-  // `<dir>/index.md`, e.g. "welcome") or include a filename (for
+  // `<dir>/index.md`, e.g. "cve-2026-42743") or include a filename (for
   // `<dir>/<name>.md`, e.g. "foo/bar"). Try both interpretations so the
   // cover resolves regardless of layout.
   const idParts = entryId.split('/');

@@ -1,7 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import TableOfContents from '../components/TableOfContents.astro';
-import Comment from '../components/waline/Comment.astro';
 interface MarkdownHeading {
   depth: number;
   slug: string;
@@ -47,9 +46,6 @@ const {title, description, headings, cover} = Astro.props;
         <article class="prose max-w-none">
           <slot/>
         </article>
-        <div class="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800">
-          <Comment />
-        </div>
       </div>
       <div class="hidden lg:block w-56 shrink-0 order-3"></div>
     </div>

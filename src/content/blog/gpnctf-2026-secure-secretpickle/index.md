@@ -9,31 +9,31 @@ pinned: false
 draft: false
 ---
 
-### Phân tích
+### Analysis
 
-Trong giao diện, action `adminbot` có mô tả:
+In the UI, the `adminbot` action is described as:
 
 ```text
 Have the adminbot visit a URL and screenshot it. URL must be base64.
 ```
 
-Cho thấy tham số `params.url` phải là base64 của URL mà bot sẽ truy cập.
+This shows the `params.url` parameter must be the base64 of the URL the bot will visit.
 
-Nếu bot không chặn scheme nguy hiểm như `file://`, ta có thể yêu cầu bot truy cập:
+If the bot does not block dangerous schemes such as `file://`, we can ask the bot to visit:
 
 ```text
 file:///flag.txt
 ```
 
-Khi bot mở file này, nội dung flag sẽ được render trên trình duyệt headless. Sau đó action `adminbot` trả về screenshot dưới dạng ảnh base64. Ta chỉ cần tách ảnh ra và mở để đọc flag.
+When the bot opens this file, the flag content is rendered in the headless browser. The `adminbot` action then returns a screenshot as a base64 image. We just need to extract the image and open it to read the flag.
 
-### Khai thác
+### Exploitation
 
-Do secretpickle payload khi tự gửi trực tiếp qua path có thể gây lỗi `404` vì các ký tự đặc biệt trong base64, nên cách tốt hơn là dùng chính frontend của challenge.
+Since sending the secretpickle payload directly through the path can cause a `404` due to special characters in base64, a better way is to use the challenge's own frontend.
 
-Frontend sẽ tự parse query string, tự gọi `secretpickle_dump()`, rồi POST request đúng format lên server.
+The frontend parses the query string itself, calls `secretpickle_dump()` itself, then POSTs the correctly formatted request to the server.
 
-Ta dùng Playwright để mở URL frontend với query:
+We use Playwright to open the frontend URL with the query:
 
 ```text
 /?a=adminbot&params.url=<base64-url>
@@ -117,7 +117,7 @@ with sync_playwright() as p:
     browser.close()
 ```
 
-Chạy script:
+Run the script:
 
 ![](./image.png)
 

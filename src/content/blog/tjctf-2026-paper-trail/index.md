@@ -9,33 +9,33 @@ pinned: false
 draft: false
 ---
 
-Khi truy cập challenge, ứng dụng hiển thị một form check-in:
+When visiting the challenge, the application shows a check-in form:
 
 ![](./image.png)
 
-Nhập tên bất kì. Request được gửi tới endpoint:
+Enter any name. The request is sent to the endpoint:
 
 ![](./image-1.png)
 
-Server trả về redirect `302 Found` và set cookie:
+The server returns a `302 Found` redirect and sets a cookie:
 
-Điều này cho thấy ứng dụng sử dụng JWT để lưu thông tin badge của visitor.
+This shows the application uses a JWT to store the visitor's badge information.
 
-### Phân tích JWT
+### JWT analysis
 
-Cookie nhận được:
+The cookie received:
 
 ```text
 paper_badge=eyJhbGciOiJSUzI1NiIsImtpZCI6ImZyb250LWRlc2stMjAyNiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwYXBlci10cmFpbC1vZmZpY2UiLCJhdWQiOiJwYXBlci10cmFpbC12aXNpdG9ycyIsInN1YiI6IjcyMDQyZjllMDYyNTA2NGYiLCJuYW1lIjoiZnJvZyIsInJvbGUiOiJ2aXNpdG9yIiwiaWF0IjoxNzc5MDE3MzE3LCJuYmYiOjE3NzkwMTczMTcsImV4cCI6MTc3OTAyMDkxN30.ecfs2Jj38eZalf7OUzFa9OJWtEcUKyEyhHW3mFRWlWhlFgUD12jZGlh9Hhy1O-iZ8knBIgTRq2qu5GMSX5noo_JMUgJVeNcVq7v5hw5f0QZmZ2VSJSC5MPEgOSZUNNUvYv5TamSZ_khXVFBSJGYPifbIufrAHwURivNk7YI8AMaf0VBvAkihiUPWrGRDQT5ZOFOe4wwjKS6AvmcvnOr-g3qUH-cDZs3Mns3ne1ZJZuwyDYfTv1PbLLG6JRrmdcQWYL7BysI1RafCVgoARaJVpH3YIRW5XUI44JTU7LXrYrCQZUxufTrcHWCkL981APqw2vqGcPZcrDFR22FwBXjPTw
 ```
 
-JWT gồm 3 phần:
+The JWT has 3 parts:
 
 ```text
 header.payload.signature
 ```
 
-Decode JWT ban đầu, ta thấy payload có nội dung tương tự:
+Decoding the initial JWT, we see the payload has content similar to:
 
 ```json
 {
@@ -50,17 +50,17 @@ Decode JWT ban đầu, ta thấy payload có nội dung tương tự:
 }
 ```
 
-Truy cập `VAULT DRAWER`:
+Access the `VAULT DRAWER`:
 
 ![](./image-2.png)
 
-Với `role = visitor` sẽ không trả flag vì quyền chưa đủ.
+With `role = visitor` it won't return the flag because the permission is insufficient.
 
-Mục tiêu là tạo được JWT hợp lệ có `role = director`
+The goal is to craft a valid JWT with `role = director`
 
-### Phân tích lỗi
+### Bug analysis
 
-JWT ban đầu dùng thuật toán:
+The initial JWT uses the algorithm:
 
 ```json
 {
@@ -70,11 +70,11 @@ JWT ban đầu dùng thuật toán:
 }
 ```
 
-Với `RS256`, server thường phải verify chữ ký bằng public key cố định ở phía backend.
+With `RS256`, the server normally has to verify the signature using a fixed public key on the backend.
 
-Tuy nhiên challenge này tồn tại lỗi JWK header injection. JWT cho phép header chứa trường `jwk`.
+However, this challenge has a JWK header injection bug. The JWT allows the header to contain a `jwk` field.
 
-### Forge JWT mới
+### Forging a new JWT
 
 ```python
 import jwt
@@ -135,9 +135,9 @@ new_token = jwt.encode(
 print(new_token)
 ```
 
-Script sẽ sinh ra một JWT mới có `role = director` và header chứa `jwk` public key do mình tự tạo.
+The script generates a new JWT with `role = director` and a header containing a `jwk` public key that we created ourselves.
 
-Thay token mới vào:
+Replace with the new token:
 
 ![](./image-3.png)
 

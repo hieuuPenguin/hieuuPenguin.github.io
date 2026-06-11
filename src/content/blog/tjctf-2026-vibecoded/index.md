@@ -9,49 +9,49 @@ pinned: false
 draft: false
 ---
 
-Message gợi ý:
+Hint message:
 
 > Source: true me bro, anyways um this is an instance i hope so people other than your team can't see messages...
 
-Điều này gợi ý rằng app có cơ chế phân tách dữ liệu theo từng instance/team.
+This hints that the app separates data per instance/team.
 
-Khi truy cập instance của team, ví dụ:
+When visiting the team's instance, for example:
 
 ```text
 https://vibecoded-ed14c7d1a97f5ab9.tjc.tf/
 ```
 
-browser sẽ gửi request với header:
+the browser sends a request with the header:
 
 ```http
 Host: vibecoded-ed14c7d1a97f5ab9.tjc.tf
 ```
 
-App dùng `Host` header để xác định instance. Nếu ta sửa `Host` thành domain canonical:
+The app uses the `Host` header to determine the instance. If we change `Host` to the canonical domain:
 
 ```http
 Host: vibecoded.tjc.tf
 ```
 
-thì app sẽ đọc nhầm dữ liệu từ instance chung thay vì instance riêng của team.
+then the app will mistakenly read data from the shared instance instead of the team's own instance.
 
-Đây là lỗi **Host Header Trust / Instance Isolation Bypass**.
+This is a **Host Header Trust / Instance Isolation Bypass** bug.
 
-### Khai thác
+### Exploitation
 
-Sửa Host header:
+Change the Host header:
 
 ```http
 Host: vibecoded-ed14c7d1a97f5ab9.tjc.tf
 ```
 
-thành:
+to:
 
 ```http
 Host: vibecoded.tjc.tf
 ```
 
-Tìm flag trong response
+Find the flag in the response
 
 ![](./image.png)
 

@@ -16,6 +16,3 @@ export const SOCIAL_LINKS = [
   { name: 'GitHub', href: 'https://github.com/hieuuPenguin', icon: 'github' },
   { name: 'Facebook', href: 'https://www.facebook.com/hieuuPenguin', icon: 'facebook' },
 ];
-
-export const npmCDN = '';
-export const walineServer = '';

@@ -58,12 +58,12 @@ A static CVE and CTF writeup blog built with [Astro](https://astro.build), based
 
 ```yaml
 ---
-title: "TJCTF2026-web/paper-trail"
-description: "CTF writeup - web/paper-trail (TJCTF 2026)"
+title: "My First Blog Post"
+description: "This is the first post of my new Astro blog."
 date: 2026-05-17
 updated: 2026-05-18
-tags: [CTF, Web, TJCTF]
-category: "TJCTF 2026"
+tags: [Foo, Bar]
+category: "Front-end"
 cover: ./cover.png
 pinned: false
 draft: false
@@ -88,11 +88,9 @@ Recommended post structure:
 
 ```text
 src/content/blog/
-`-- tjctf-2026-paper-trail/
+`-- Ex Blog Post/
     |-- index.md
     |-- cover.png
-    |-- image.png
-    `-- image-1.png
 ```
 
 Images can be referenced from the same post folder:
@@ -171,8 +169,6 @@ your-username.github.io
 |   |-- pages/              # Routes
 |   |-- styles/             # Global styles
 |   `-- utils/              # Utilities
-|-- upctf/                  # Source CTF notes and assets
-|-- upcve/                  # Source CVE notes and assets
 |-- astro.config.ts         # Astro configuration
 |-- package.json            # Project scripts and dependencies
 `-- src/consts.ts           # Site metadata and navigation

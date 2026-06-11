@@ -13,7 +13,7 @@ draft: false
 
 ### Check source code
 
-Trong source có đoạn:
+The source contains:
 
 ```js
 async function runScript(url) {
@@ -34,22 +34,22 @@ async function runScript(url) {
 }
 ```
 
-Điều kiện kiểm tra bằng `Acorn` yêu cầu source chỉ được là một assignment đơn giản:
+The check, done with `Acorn`, requires the source to be only a simple assignment:
 
 ```js
 recipe = "..."
 ```
 
-Hoặc vế phải là một string literal/template literal không có expression.
+Or the right-hand side must be a string literal/template literal with no expressions.
 
 ### Vulnerability
 
-Lỗi nằm ở việc ứng dụng dùng hai parser/decoder khác nhau cho cùng một URL:
+The bug lies in the application using two different parsers/decoders for the same URL:
 
-1. `fetch(url).then(r => r.text())` đọc nội dung để kiểm tra bằng Acorn.
-2. `<script src=url>` lại để browser tự load và execute script theo MIME/charset của resource.
+1. `fetch(url).then(r => r.text())` reads the content to validate it with Acorn.
+2. `<script src=url>` lets the browser load and execute the script according to the resource's MIME/charset.
 
-Với `data:` URL, hàm `isScriptStatic()` coi đây là static protocol nên không gắn SRI integrity:
+With a `data:` URL, the `isScriptStatic()` function treats it as a static protocol so it does not attach SRI integrity:
 
 ```js
 function isScriptStatic(src) {
@@ -64,23 +64,23 @@ function isScriptStatic(src) {
 }
 ```
 
-Do đó ta có thể dùng `data:text/javascript;charset=iso-2022-jp,...` để tạo sự khác biệt giữa nội dung được `fetch().text()` kiểm tra và nội dung được browser thực thi khi load script.
+Therefore we can use `data:text/javascript;charset=iso-2022-jp,...` to create a difference between the content validated by `fetch().text()` and the content the browser executes when loading the script.
 
 ### Exploit idea
 
-Adminbot set flag trong cookie rồi visit URL do mình cung cấp. Vì bot chỉ accept URL bắt đầu bằng:
+The admin bot sets the flag in a cookie then visits a URL we provide. Since the bot only accepts URLs starting with:
 
 ```text
 http://localhost:1337
 ```
 
-nên target cuối cùng sẽ có dạng:
+the final target will look like:
 
 ```text
 http://localhost:1337/?url=<data-url-payload>
 ```
 
-Khi script chạy trong origin `localhost:1337`, nó đọc được `document.cookie` và gửi về webhook.
+When the script runs in the `localhost:1337` origin, it can read `document.cookie` and send it to a webhook.
 
 ### Exploit script
 
@@ -113,7 +113,7 @@ curl -s -G "$CHALL/bot/run" --data-urlencode "url=$TARGET"
 
 ### Result
 
-Sau khi gửi URL cho bot, webhook nhận được request chứa cookie:
+After sending the URL to the bot, the webhook receives a request containing the cookie:
 
 ![](./image-1.png)
 

@@ -9,29 +9,29 @@ pinned: false
 draft: false
 ---
 
-### Mô tả đề bài
+### Challenge description
 
-Trang chủ của challenge chỉ hiển thị thông báo bảo trì:
+The challenge homepage only displays a maintenance notice:
 
 > “Internal systems are currently undergoing maintenance.”
 
-### Dò thư mục và tìm `robots.txt`
+### Directory scanning and finding `robots.txt`
 
-Dùng `dirsearch`:
+Use `dirsearch`:
 
 ![](./image.png)
 
-Từ đây biết được có thư mục ẩn:
+From here we learn there is a hidden directory:
 
 ![](./image-1.png)
 
 ---
 
-### Mở các file nội bộ
+### Opening the internal files
 
-Truy cập lần lượt các file.
+Access the files one by one.
 
-Nội dung đáng chú ý trong file `/internal-docs/it-onboarding.txt`:
+The notable content in `/internal-docs/it-onboarding.txt`:
 
 ```text
 SECTION 1 - DOCUMENT PORTAL
@@ -45,13 +45,13 @@ Credentials are stored in the application config file
 for reference by the IT team. See config.php in the web root.
 ```
 
-Từ đây có 2 thông tin rất quan trọng:
+From here we get 2 very important pieces of information:
 
-1. Website có chức năng đọc file qua tham số `?file=`
+1. The website has a file-reading feature via the `?file=` parameter
 
-2. Thông tin đăng nhập admin nằm trong `config.php`
+2. The admin login info is in `config.php`
 
-Truy cập `/?file=config.php`:
+Access `/?file=config.php`:
 
 ```php
 <?php
@@ -78,45 +78,47 @@ define('APP_DEBUG', false);
 define('APP_VERSION', '1.0.3');
 ```
 
-Ta lấy được:
+We obtain:
 
-- đường dẫn dashboard admin:
+- the admin dashboard path:
 
 ```text
 /dashboard-admin.php
 ```
 
-- username admin:
+- the admin username:
 
 ```text
 administrator
 ```
 
-- password thật đã bị xóa:
+- the real password has been removed:
 
 ```php
 define('ADMIN_PASS', '[deleted it for safety reasons - Tom]');
 ```
 
-- và một comment rất quan trọng:
+- and a very important comment:
 
 ```php
 // WARNING: SYSTEM IS CURRENTLY USING DEFAULT FACTORY CREDENTIALS.
 // TODO: Change 'administrator' account from default password.
 ```
 
-Câu này cho biết hệ thống vẫn đang dùng mật khẩu mặc định
+This line tells us the system is still using the default password
 
 ```text
 administrator
 ```
 
-Truy cập `/dashboard-admin.php`:
+Access `/dashboard-admin.php`:
 
 ![](./image-2.png)
 
 ![](./image-3.png)
 
-Flag
+### Flag
 
-- `UMASS{4lw4ys_ch4ng3_d3f4ult_cr3d3nt14ls}`
+```text
+UMASS{4lw4ys_ch4ng3_d3f4ult_cr3d3nt14ls}
+```

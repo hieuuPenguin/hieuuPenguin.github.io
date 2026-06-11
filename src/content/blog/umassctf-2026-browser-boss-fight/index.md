@@ -11,40 +11,40 @@ draft: false
 
 ### Overview
 
-Khi truy cập website của bài, ta thấy giao diện gồm một ô nhập **key** và một **cánh cửa** có thể bấm vào. Ý tưởng ban đầu là thử nhập key và quan sát ứng dụng xử lý như thế nào.
+When visiting the challenge website, we see an interface with a **key** input field and a **door** that can be clicked. The initial idea is to try entering a key and observe how the application handles it.
 
-### Kiểm tra source code phía client
+### Inspecting the client-side source code
 
-Sau khi xem source code của trang, có thể thấy giá trị người dùng nhập vào không được giữ nguyên. Thay vào đó, key luôn bị thay thế bằng chuỗi:
+After viewing the page source, we can see the value the user enters is not kept as-is. Instead, the key is always replaced with the string:
 
 ```text
 WEAK_NON_KOOPA_KNOCK
 ```
 
-Điều này cho thấy việc nhập key ngẫu nhiên ở giao diện chỉ là một lớp đánh lạc hướng.
+This shows that entering a random key in the UI is just a layer of misdirection.
 
-### Quan sát phản hồi từ server
+### Observing the server response
 
-Trong response, có một header khá đáng chú ý là Server, và tại đây xuất hiện gợi ý:
+In the response, there is a fairly notable header, Server, and here a hint appears:
 
 ```text
 under_the_doormate
 ```
 ![](./image.png)
 
-### Thử dùng key theo gợi ý
+### Trying the key from the hint
 
-Ta dùng giá trị `under_the_doormate` làm key để gửi request.
+We use the value `under_the_doormate` as the key to send a request.
 
 ![](./image-1.png)
 
-Lần này response trả về cho ta 1 endpoint mới, truy cập endpoint đó ta được:
+This time the response gives us a new endpoint; accessing that endpoint we get:
 
 ![](./image-2.png)
 
-### Phân tích cookie
+### Cookie analysis
 
-Quan sát cookie của trình duyệt, ta thấy có một biến tên là:
+Observing the browser cookies, we see a variable named:
 
 ```text
 hasAxe=false
@@ -52,25 +52,25 @@ hasAxe=false
 
 ![](./image-3.png)
 
-Tên biến này gợi ý rằng hệ thống đang kiểm tra xem người chơi có “rìu” hay không. Vì challenge liên quan đến mở cửa, rất có thể server sẽ chỉ cho đi tiếp nếu cookie này mang giá trị đúng.
+This variable name hints that the system is checking whether the player has an “axe” or not. Since the challenge is about opening a door, the server very likely only lets you proceed if this cookie has the correct value.
 
-### Chỉnh sửa cookie
+### Modifying the cookie
 
-Ta sửa cookie từ:
+We change the cookie from:
 
 ```text
 hasAxe=false
 ```
 
-thành:
+to:
 
 ```text
 hasAxe=true
 ```
 
-Sau đó truy cập lại endpoint tương ứng với key đúng.
+Then access the endpoint corresponding to the correct key again.
 
-Server trả về flag:
+The server returns the flag:
 
 ![](./image-4.png)
 

